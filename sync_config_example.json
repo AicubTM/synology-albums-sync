@@ -1,0 +1,53 @@
+{
+  "synology": {
+    "dsm_version": 7
+  },
+  "paths": {
+    "personal_homes_root": "/volume1/homes",
+    "personal_shared_subdir": "photos-shared",
+    "shared_photo_root": "/volume1/photo",
+    "root_mount_prefix": "mount_"
+  },
+  "mounts": {
+    "enable_root_bind_mounts": true
+  },
+  "media": {
+    "scan_max_depth": null
+  },
+  "indexing": {
+    "reindex_settle_seconds": 10,
+    "filter_wait_attempts": 12,
+    "filter_wait_delay": 5,
+    "force_reindex_on_start": false,
+    "reindex_after_link": true,
+    "personal_reindex_command": ""
+  },
+  "sharing": {
+    "managed_roots": ["team_shared", "team_family", "team_projects"],
+    "root_share_with": {
+      "team_shared": ["family_rw"],
+      "team_family": ["family_rw"],
+      "team_projects": ["project_group"]
+    },
+    "default_share_with": [],
+    "default_share_permission": "download",
+    "default_share_roles": ["downloader"],
+    "enable_public_sharing": true,
+    "share_link_url_base": "",
+    "personal_album_roots": [
+      {
+        "label": "Family Archive",
+        "path": "/volume1/homes/photos_sync/Photos/family",
+        "share_with": ["family_rw"],
+        "permission": "download",
+        "share_roles": ["downloader"]
+      },
+      {
+        "label": "Projects",
+        "relative_path": "Projects/Kids",
+        "share_with": ["kids_group"],
+        "permission": "view"
+      }
+    ]
+  }
+}

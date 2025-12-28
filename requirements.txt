@@ -1,0 +1,17 @@
+certifi==2025.6.15
+cffi==1.17.1
+charset-normalizer==3.4.2
+cryptography==45.0.4
+idna==3.10
+packaging==25.0
+pycparser==2.22
+pyotp==2.9.0
+python-dotenv==1.1.1
+requests==2.32.4
+requests-toolbelt==1.0.0
+setuptools==80.9.0
+six==1.17.0
+synology-api==0.8.1
+tqdm==4.67.1
+treelib==1.8.0
+urllib3==2.5.0
