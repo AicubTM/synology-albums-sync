@@ -446,9 +446,9 @@ Synology Albums Sync intentionally keeps the Synology API/Web helpers framework-
 
 ## Support
 
-If this project helps you, consider sponsoring: https://github.com/sponsors/aurelicurea-cell
+If this project helps you, consider sponsoring: https://github.com/sponsors/AicubTm
 
-[![Sponsor](https://img.shields.io/badge/Sponsor-❤-pink)](https://github.com/sponsors/aurelicurea-cell)
+[![Sponsor](https://img.shields.io/badge/Sponsor-❤-pink)](https://github.com/sponsors/AicubTM)
 
 ## Troubleshooting
 
