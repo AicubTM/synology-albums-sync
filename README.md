@@ -36,10 +36,10 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 	python main.py               # mount roots, wait for indexing, then create/refresh albums
 	python main.py --mount       # only ensure bind mounts exist (boot-time helper)
 	python main.py --create-albums  # refresh albums without touching mounts
-	python main.py --create-personal-albums --share-with family_rw --max-depth 4 --path Family/Trips  # refresh only targeted personal folders with overrides
+	python main.py --create-personal-albums --share-with family_rw --max-depth 4 --path Family/Trips --label-prefix ""  # refresh only targeted personal folders with overrides
 	python main.py --delete-albums  # delete only the managed condition albums
 	python main.py --delete-personal-albums  # delete only personal-root albums
-	python main.py --delete-personal-albums --path Family/Trips --label-prefix ""  # delete only the ad-hoc path’s albums
+	python main.py --delete-personal-albums --path Family/Trips  # delete only the ad-hoc path’s albums
 	python main.py --unmount     # detach bind mounts
 	python main.py --unmount-all # delete albums and detach mounts (legacy alias: --unmap)
 	```
