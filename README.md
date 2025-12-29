@@ -90,6 +90,50 @@ Albums created in Synology Photos (examples):
 
 Mount folder names use `paths.root_mount_prefix`, and the parent directory comes from `paths.personal_shared_subdir` in `sync_config.json`.
 
+## Personal space example (create personal albums)
+
+This example shows a personal-only run (no bind mounts) using `photos_sync` with a `personal_album_roots` entry targeting `Family/Trips`.
+
+`sync_config.json` snippet:
+
+```
+"personal_album_roots": [
+	{
+		"label": "Family Trips",
+		"relative_path": "Family/Trips"
+	}
+]
+```
+
+**Before running `python main.py --create-personal-albums`:**
+
+Personal Photos (`/volume1/homes/photos_sync/Photos`):
+
+```
+/volume1/homes/photos_sync/Photos
+└─ Family/
+	└─ Trips/
+	   ├─ 2023/
+	   └─ 2024/
+```
+
+Albums in Synology Photos:
+- (none yet for these folders)
+
+**Command:**
+
+```
+python main.py --create-personal-albums
+```
+
+**After running the command:**
+
+Albums created in Synology Photos:
+- Family Trips - 2023
+- Family Trips - 2024
+
+Because personal roots live under the user’s Photos directory, no bind mounts are created; the scanner walks the configured path directly and creates albums for each child folder that already contains media.
+
 ## Project layout
 
 ```
