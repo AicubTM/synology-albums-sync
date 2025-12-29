@@ -23,7 +23,7 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 
 ## Quick start
 
-1. Copy `.env.example` (or this repo’s `.env`) and fill in your DSM credentials.
+1. Copy `.env_example` to `.env` and fill in your DSM credentials.
 2. Install dependencies:
 
 	```
@@ -33,7 +33,7 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 3. From the repo root, run whichever mode you need:
 
 	```
-	python main.py               # mount roots, wait for indexing, then create/refresh albums
+	python main.py               # ensure bind mounts exist, wait for indexing, then create/refresh albums
 	python main.py --mount       # only ensure bind mounts exist (boot-time helper)
 	python main.py --create-albums  # refresh albums without touching mounts
 	python main.py --create-personal-albums --share-with family_rw --max-depth 4 --path Family/Trips --label-prefix ""  # refresh only targeted personal folders with overrides
@@ -48,10 +48,54 @@ Use `--share-with`, `--roles`, `--permission`, and `--max-depth` alongside `--cr
 
 4. Schedule a DSM "Boot-up" task with `python main.py --mount` to re-create bind mounts after every restart, then a delayed task with `python main.py` (or `--create-albums`) once indexing catches up.
 
+## Folder layout example (default sync)
+
+The example below uses DSM user `photos_sync` and shows how bind mounts appear under the personal Photos space when running `python main.py` with no arguments.
+
+**Before running `python main.py`:**
+
+Team Space (`/volume1/photo`):
+
+```
+/volume1/photo
+├─ team_family/
+│  ├─ 2024/
+│  └─ Shared/
+└─ team_projects/
+	└─ Archive/
+```
+
+Personal Photos (`/volume1/homes/photos_sync/Photos`):
+
+```
+/volume1/homes/photos_sync/Photos
+└─ photos-shared/   # empty; mount targets will be created here
+```
+
+**After running `python main.py` (bind mounts + album refresh):**
+
+Personal Photos (`/volume1/homes/photos_sync/Photos`):
+
+```
+/volume1/homes/photos_sync/Photos
+└─ photos-shared/
+	├─ mount_team_family/   -> /volume1/photo/team_family
+	└─ mount_team_projects/ -> /volume1/photo/team_projects
+```
+
+Albums created in Synology Photos (examples):
+- team_family - 2024
+- team_family - Shared
+- team_projects - Archive
+
+Mount folder names use `paths.root_mount_prefix`, and the parent directory comes from `paths.personal_shared_subdir` in `sync_config.json`.
+
 ## Project layout
 
 ```
 synology-albums-sync/
+├─ .env_example          # Secrets template (copy to .env)
+├─ .env                  # Filled secrets (gitignored)
 ├─ main.py                 # CLI entrypoint (arg parsing + service wiring)
 ├─ README.md / TODO.md     # Docs and change log
 ├─ sync_config.json        # Default configuration template
@@ -349,6 +393,8 @@ Pair `--create-personal-albums` with the sharing overrides (`--share-with`, `--r
 
 ### Example configuration files
 
+Copy `.env_example` to `.env` and fill in your own host/user/password values. The snippets below mirror the template file.
+
 `.env` (secrets only):
 
 ```
@@ -453,7 +499,7 @@ If this project helps you, consider sponsoring: https://github.com/sponsors/Aicu
 ## Troubleshooting
 
 - If new folders take a long time to appear, bump `REINDEX_SETTLE_SECONDS` or the `FILTER_WAIT_*` values.
-- Supply `PERSONAL_REINDEX_COMMAND` (for example `synophoto_dsm_userindex --user vendor --rebuild`) if Synology’s API intermittently fails.
+- Supply `PERSONAL_REINDEX_COMMAND` (for example `synophoto_dsm_userindex --user photos_sync --rebuild`) if Synology’s API intermittently fails.
 
 ## Known limitations & lessons learned
 
