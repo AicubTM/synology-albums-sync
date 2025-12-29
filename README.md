@@ -84,7 +84,7 @@ The CLI exposes a single mutually exclusive group of primary flags. Run `python 
 | `--unmount` | Detach bind mounts only. Legacy alias: `--unmound`. |
 | `--unmount-all` | Delete all managed albums and unmount the roots in one pass. Legacy alias: `--unmap`. |
 | `--create-personal-albums` | Refresh albums for `sharing.personal_album_roots` (or an ad-hoc path) without touching Team Space folders. |
-| `--delete-personal-albums` | Remove albums created for `sharing.personal_album_roots` (optionally limited via `--path`/`--label-prefix`). |
+| `--delete-personal-albums` | Remove albums created for `sharing.personal_album_roots` (optionally limited via `--path`; `--label-prefix` is ignored). |
 
 ### Personal overrides
 
