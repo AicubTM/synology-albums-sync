@@ -24,13 +24,14 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 ## Quick start
 
 1. Copy `.env_example` to `.env` and fill in your DSM credentials.
-2. Install dependencies:
+2. Copy `sync_config_example.json` to `sync_config.json`, then adjust paths/share targets for your environment.
+3. Install dependencies:
 
 	```
 	pip install -r requirements.txt
 	```
 
-3. From the repo root, run whichever mode you need:
+4. From the repo root, run whichever mode you need:
 
 	```
 	python main.py               # ensure bind mounts exist, wait for indexing, then create/refresh albums
@@ -46,7 +47,7 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 
 Use `--share-with`, `--roles`, `--permission`, and `--max-depth` alongside `--create-personal-albums` to override sharing targets, roles, permissions, or scan depth just for that run (depth values <= 0 scan the full tree). Add `--path <relative/or/absolute>` when you want to manage a single folder without editing the JSON config (works with both create/delete flows), and `--label-prefix` if you want the albums for that ad-hoc path to use a custom prefix.
 
-4. Schedule a DSM "Boot-up" task with `python main.py --mount` to re-create bind mounts after every restart, then a delayed task with `python main.py` (or `--create-albums`) once indexing catches up.
+5. Schedule a DSM "Boot-up" task with `python main.py --mount` to re-create bind mounts after every restart, then a delayed task with `python main.py` (or `--create-albums`) once indexing catches up.
 
 ## Folder layout example (default sync)
 
@@ -152,6 +153,7 @@ synology-albums-sync/
 ├─ .env                  # Filled secrets (gitignored)
 ├─ main.py                 # CLI entrypoint (arg parsing + service wiring)
 ├─ README.md / TODO.md     # Docs and change log
+├─ sync_config_example.json # Example config with placeholders
 ├─ sync_config.json        # Default configuration template
 ├─ requirements.txt        # Runtime dependencies (synology-api, dotenv, pyotp, ...)
 ├─ docs/
@@ -448,6 +450,14 @@ Pair `--create-personal-albums` with the sharing overrides (`--share-with`, `--r
 ### Example configuration files
 
 Copy `.env_example` to `.env` and fill in your own host/user/password values. The snippets below mirror the template file.
+
+There is also a `sync_config_example.json` in the repo with placeholder paths, roots, and sharing targets that match the examples used above; copy it to `sync_config.json` and adjust for your environment.
+
+When adapting `sync_config_example.json`:
+- Set `paths.personal_homes_root` to your homes volume (e.g., `/volume1/homes`) and keep `personal_shared_subdir` / `root_mount_prefix` unless you already use different names.
+- List your Team Space roots in `sharing.managed_roots`, and map each to real users/groups in `root_share_with` (e.g., `family_rw`, `project_group`).
+- Update `personal_album_roots` with your personal folders, adjusting `path`/`relative_path`, `label`, and `share_with` targets (e.g., `family_rw`, `kids_group`).
+- Leave `scan_max_depth`, `indexing`, and `enable_public_sharing` as-is unless you need different limits or sharing behavior.
 
 `.env` (secrets only):
 
