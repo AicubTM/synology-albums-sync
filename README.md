@@ -24,7 +24,7 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 ## Quick start
 
 1. Copy `.env_example` to `.env` and fill in your DSM credentials.
-2. Copy `sync_config_example.json` to `sync_config.json`, then adjust paths/share targets for your environment.
+2. Copy `sync_config_example.json` to `sync_config.json`, then adjust paths/share targets for your environment. (If you only run `--create-personal-albums`/`--delete-personal-albums` with `--path`, you can skip this file and rely on defaults.)
 3. Install dependencies:
 
 	```

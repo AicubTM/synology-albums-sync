@@ -132,11 +132,6 @@ def _build_personal_entry_from_path(path: str, *, label_override: Optional[str] 
 
 def main() -> None:
     args = parse_cli_args()
-    if not (
-        config.APP_CONFIG.sharing.target_roots or config.APP_CONFIG.sharing.personal_target_roots
-    ):
-        print("❌ No managed roots defined; update sync_config.json before running")
-        return
 
     media_service = MediaService()
     mount_service = MountService(media_service)
@@ -179,6 +174,19 @@ def main() -> None:
         personal_roles = _parse_csv_arg(args.roles)
         personal_permission = args.permission.strip() if args.permission else None
         personal_max_depth = args.max_depth
+
+    has_team_roots = bool(config.APP_CONFIG.sharing.target_roots)
+    has_personal_roots = bool(config.APP_CONFIG.sharing.personal_target_roots)
+    has_explicit_personal = bool(explicit_roots)
+
+    if args.create_personal_albums or args.delete_personal_albums:
+        if not (has_personal_roots or has_explicit_personal):
+            print("❌ No personal roots configured; provide --path or add personal_album_roots in sync_config.json")
+            return
+    else:
+        if not (has_team_roots or has_personal_roots):
+            print("❌ No managed roots defined; update sync_config.json before running")
+            return
 
     if args.mount:
         mount_service.ensure_mounts(False, label="mount command")

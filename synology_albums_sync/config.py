@@ -450,7 +450,8 @@ def _load_json_config(path: str = CONFIG_PATH) -> Dict[str, object]:
         with open(path, "r", encoding="utf-8") as handle:
             return json.load(handle)
     except FileNotFoundError as exc:
-        raise ConfigFileError(f"Unable to locate config file at '{path}'") from exc
+        print(f"⚠️  Config file not found at '{path}'; continuing with defaults")
+        return {}
     except json.JSONDecodeError as exc:
         raise ConfigFileError(f"Invalid JSON in config file '{path}': {exc}") from exc
 
