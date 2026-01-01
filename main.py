@@ -36,6 +36,11 @@ def parse_cli_args() -> argparse.Namespace:
         help="Delete a single album by exact name (any album type).",
     )
     group.add_argument(
+        "--list-albums",
+        action="store_true",
+        help="List albums (optionally restricted to a specific personal path).",
+    )
+    group.add_argument(
         "--unmount",
         action="store_true",
         help="Unmount managed folders without touching albums.",
@@ -153,8 +158,10 @@ def main() -> None:
     if override_flags_used and not args.create_personal_albums:
         print("❌ Personal override flags require --create-personal-albums")
         return
-    if path_flags_used and not (args.create_personal_albums or args.delete_personal_albums):
-        print("❌ --path/--label-prefix require --create-personal-albums or --delete-personal-albums")
+    if path_flags_used and not (
+        args.create_personal_albums or args.delete_personal_albums or args.list_albums
+    ):
+        print("❌ --path/--label-prefix require --create-personal-albums, --delete-personal-albums, or --list-albums")
         return
     if args.label_prefix is not None and not args.path:
         print("❌ --label-prefix requires --path")
@@ -197,12 +204,16 @@ def main() -> None:
         mount_service.ensure_mounts(False, label="mount command")
         return
 
-    if args.delete_albums:
-        album_service.delete_albums_only()
-        return
-
     if args.delete_album_by_name:
         album_service.delete_album_by_name(args.delete_album_by_name)
+        return
+
+    if args.list_albums:
+        album_service.list_albums(target_path=args.path)
+        return
+
+    if args.delete_albums:
+        album_service.delete_albums_only()
         return
 
     if args.delete_personal_albums:

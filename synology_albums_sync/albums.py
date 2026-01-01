@@ -57,6 +57,22 @@ class AlbumService:
         self.app_config = APP
         self.runtime_state = STATE
 
+    def _normalize_personal_path_arg(self, path: str) -> Tuple[str, str]:
+        personal_root = os.path.abspath(self.app_config.paths.personal_photos_root)
+        candidate_abs = path if os.path.isabs(path) else os.path.join(personal_root, path)
+        candidate_abs = os.path.abspath(candidate_abs)
+        try:
+            common_prefix = os.path.commonpath([candidate_abs, personal_root])
+        except ValueError as exc:
+            raise ValueError(
+                f"Personal path '{candidate_abs}' must live on the same volume as '{personal_root}'"
+            ) from exc
+        if common_prefix != personal_root:
+            raise ValueError(f"Personal path '{candidate_abs}' must reside under '{personal_root}'")
+        rel_token = os.path.relpath(candidate_abs, personal_root).replace("\\", "/").strip("/")
+        virtual_path = "/" + rel_token if rel_token else "/"
+        return normalize_personal_path(candidate_abs), normalize_personal_path(virtual_path)
+
     def attach_mount_service(self, mount_service: "MountService") -> None:
         self.mount_service = mount_service
 
@@ -225,6 +241,58 @@ class AlbumService:
         if removed:
             state.existing_albums[:] = [album for album in state.existing_albums if album.get("name") != name]
             state.existing_names.discard(name)
+
+    def list_albums(self, target_path: Optional[str] = None) -> None:
+        try:
+            ensure_photos_session()
+            load_folder_filters()
+        except Exception as exc:
+            print(f"[ERROR] Unable to load albums or folder filters: {exc}")
+            return
+        state = self.build_album_state()
+        allowed_ids: Optional[Set[int]] = None
+        normalized_target: Optional[str] = None
+        if target_path:
+            try:
+                abs_target, virtual_target = self._normalize_personal_path_arg(target_path)
+                normalized_target = abs_target
+            except ValueError as exc:
+                print(f"❌ {exc}")
+                return
+            allowed_ids = set()
+            prefixes = [abs_target.rstrip("/") + "/", virtual_target.rstrip("/") + "/"]
+            exacts = {abs_target, virtual_target}
+            for entry in STATE.folder_filter_cache.values():
+                name = normalize_personal_path(entry.get("name", ""))
+                if name in exacts or any(name.startswith(p) for p in prefixes):
+                    try:
+                        allowed_ids.add(int(entry.get("id")))
+                    except (TypeError, ValueError):
+                        continue
+            if not allowed_ids:
+                print(f"[INFO] No folder_filter entries under '{virtual_target}' or '{abs_target}'; nothing to list")
+                return
+        total = 0
+        for album in state.existing_albums:
+            folder_ids = self._extract_album_folder_ids(album)
+            if allowed_ids is not None:
+                if not folder_ids or not any(fid in allowed_ids for fid in folder_ids):
+                    continue
+            folder_paths: List[str] = []
+            for fid in folder_ids:
+                entry = STATE.folder_filter_cache.get(fid)
+                if not entry:
+                    continue
+                folder_paths.append(normalize_personal_path(entry.get("name", "")))
+            album_id = album.get("id")
+            name = album.get("name", "")
+            if folder_paths:
+                print(f"- {name} (id {album_id}) | folders: {', '.join(sorted(folder_paths))}")
+            else:
+                print(f"- {name} (id {album_id})")
+            total += 1
+        scope = f" under '{normalized_target}'" if normalized_target else ""
+        print(f"[INFO] Listed {total} album(s){scope}")
 
     def unmap_all_roots_and_albums(self) -> None:
         state = self.build_album_state()
