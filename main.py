@@ -31,6 +31,11 @@ def parse_cli_args() -> argparse.Namespace:
         help="Delete managed albums only (keeps physical folders intact).",
     )
     group.add_argument(
+        "--delete-album-by-name",
+        metavar="NAME",
+        help="Delete a single album by exact name (any album type).",
+    )
+    group.add_argument(
         "--unmount",
         action="store_true",
         help="Unmount managed folders without touching albums.",
@@ -194,6 +199,10 @@ def main() -> None:
 
     if args.delete_albums:
         album_service.delete_albums_only()
+        return
+
+    if args.delete_album_by_name:
+        album_service.delete_album_by_name(args.delete_album_by_name)
         return
 
     if args.delete_personal_albums:

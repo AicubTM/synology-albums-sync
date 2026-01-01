@@ -39,6 +39,7 @@ Synology Albums Sync's `main.py` runs directly on your Synology NAS and keeps Te
 	python main.py --create-albums  # refresh albums without touching mounts
 	python main.py --create-personal-albums --share-with family_rw --max-depth 4 --path Family/Trips --label-prefix ""  # refresh only targeted personal folders with overrides
 	python main.py --delete-albums  # delete only the managed condition albums
+	python main.py --delete-album-by-name "Family Trips - 2024"  # delete a specific album by exact name
 	python main.py --delete-personal-albums  # delete only personal-root albums
 	python main.py --delete-personal-albums --path Family/Trips  # delete only the ad-hoc path’s albums
 	python main.py --unmount     # detach bind mounts
@@ -181,6 +182,7 @@ The CLI exposes a single mutually exclusive group of primary flags. Run `python 
 | `--mount` | Ensure bind mounts exist (no album changes). Handy for DSM boot tasks. |
 | `--create-albums` | Skip mount management but rebuild all Team Space albums (forces a reindex first). |
 | `--delete-albums` | Remove every managed Team Space album while leaving folders intact. |
+| `--delete-album-by-name` | Delete a single album by exact name (any album type). |
 | `--unmount` | Detach bind mounts only. Legacy alias: `--unmound`. |
 | `--unmount-all` | Delete all managed albums and unmount the roots in one pass. Legacy alias: `--unmap`. |
 | `--create-personal-albums` | Refresh albums for `sharing.personal_album_roots` (or an ad-hoc path) without touching Team Space folders. |

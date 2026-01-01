@@ -196,6 +196,36 @@ class AlbumService:
             total_deleted += self._remove_albums_for_root(root_name, state)
         print(f"[INFO] Deleted {total_deleted} managed Team Space album(s); no folders or media were removed")
 
+    def delete_album_by_name(self, album_name: str) -> None:
+        name = album_name.strip()
+        if not name:
+            print("[ERROR] Album name is required")
+            return
+        state = self.build_album_state()
+        matches = [album for album in state.existing_albums if album.get("name") == name]
+        if not matches:
+            print(f"[INFO] Album '{name}' not found; nothing to delete")
+            return
+        photos_client = STATE.photos
+        if photos_client is None:
+            print("[WARN] Unable to delete albums; Synology session unavailable")
+            return
+        removed = 0
+        for album in matches:
+            album_id = album.get("id")
+            if album_id is None:
+                continue
+            try:
+                photos_client.delete_album(album_id)
+                print(f"[INFO] Removed album '{name}' (id {album_id})")
+                removed += 1
+                self._unregister_album_cache(album, state)
+            except Exception as exc:
+                print(f"[ERROR] Failed to delete album '{name}': {exc}")
+        if removed:
+            state.existing_albums[:] = [album for album in state.existing_albums if album.get("name") != name]
+            state.existing_names.discard(name)
+
     def unmap_all_roots_and_albums(self) -> None:
         state = self.build_album_state()
         total_deleted = 0
