@@ -76,7 +76,7 @@ Personal Photos (`/volume1/homes/photos_sync/Photos`):
 └─ photos-shared/   # empty; mount targets will be created here
 ```
 
-**After running `python main.py` (bind mounts + album refresh):**
+**After running `python main.py --share-with family_rw --roles downloader` (bind mounts + album refresh):**
 
 Personal Photos (`/volume1/homes/photos_sync/Photos`):
 
@@ -95,6 +95,10 @@ Albums created in Synology Photos (examples):
 Sharing applied in this example:
 - `team_family` albums invite `family_rw`
 - `team_projects` albums invite `project_group`
+(derived from `sharing.root_share_with` or overridden via CLI)
+Role: `downloader` (from `--roles downloader` or `sharing.default_share_roles`)
+Command used: `python main.py --share-with family_rw --roles downloader`
+*Note:* If you omit `--share-with`/`--roles`, the script uses the values from `sync_config.json` (`sharing.root_share_with` and `sharing.default_share_roles`).
 
 Mount folder names use `paths.root_mount_prefix`, and the parent directory comes from `paths.personal_shared_subdir` in `sync_config.json`.
 
@@ -130,10 +134,10 @@ Personal Photos (`/volume1/homes/photos_sync/Photos`):
 Albums in Synology Photos:
 - (none yet for these folders)
 
-**Command:**
+**Command (with sharing overrides):**
 
 ```
-python main.py --create-personal-albums
+python main.py --create-personal-albums --share-with family_rw,kids_group --roles downloader
 ```
 
 **After running the command:**

@@ -1,6 +1,8 @@
 # Synology Albums Sync TODOs
 
 ## Change Log
+- 2026-01-01: Added `--list-albums` (with optional `--path` scoping) and `--delete-album-by-name`, plus README docs and path filtering fixes.
+- 2026-01-01: Clarified README examples to show when share/role flags are optional vs. pulled from `sync_config.json` for both Team Space and personal flows.
 - 2025-12-29: Rebranded the project/repo to **Synology Albums Sync** so downstream references and DSM task scripts use the same concise name.
 - 2025-12-28: Added project-layout docs in README plus `docs/api-usage.md` to document Synology API/Web helper reuse.
 - 2025-12-28: Extended `--delete-personal-albums` so it can target ad-hoc paths/labels just like the create flow, keeping CLI overrides symmetric.
@@ -21,4 +23,5 @@
 - 2025-12-27: Migrated synology_albums_sync/synology_web.py to the typed config/runtime stack and added sequence diagrams for each CLI use case in README.md.
 
 ## Open Tasks
+- (none)
 
