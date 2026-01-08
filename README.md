@@ -54,7 +54,7 @@ Use `--share-with`, `--roles`, `--permission`, and `--max-depth` alongside `--cr
 
 ## Folder layout example (default sync)
 
-The example below uses DSM user `photos_sync` and shows how bind mounts appear under the personal Photos space when running `python main.py` with no arguments.
+The example below uses DSM user `<user>` and shows how bind mounts appear under the personal Photos space when running `python main.py` with no arguments.
 
 **Before running `python main.py`:**
 
@@ -69,19 +69,19 @@ Team Space (`/volume1/photo`):
 	└─ Archive/
 ```
 
-Personal Photos (`/volume1/homes/photos_sync/Photos`):
+Personal Photos (`/volume1/homes/<user>/Photos`):
 
 ```
-/volume1/homes/photos_sync/Photos
+/volume1/homes/<user>/Photos
 └─ photos-shared/   # empty; mount targets will be created here
 ```
 
 **After running `python main.py --share-with family_rw --roles downloader` (bind mounts + album refresh):**
 
-Personal Photos (`/volume1/homes/photos_sync/Photos`):
+Personal Photos (`/volume1/homes/<user>/Photos`):
 
 ```
-/volume1/homes/photos_sync/Photos
+/volume1/homes/<user>/Photos
 └─ photos-shared/
 	├─ mount_team_family/   -> /volume1/photo/team_family
 	└─ mount_team_projects/ -> /volume1/photo/team_projects
@@ -104,7 +104,7 @@ Mount folder names use `paths.root_mount_prefix`, and the parent directory comes
 
 ## Personal space example (create personal albums)
 
-This example shows a personal-only run (no bind mounts) using `photos_sync` with a `personal_album_roots` entry targeting `Family/Trips` and inviting both a user and a group.
+This example shows a personal-only run (no bind mounts) using `<user>` with a `personal_album_roots` entry targeting `Family/Trips` and inviting both a user and a group.
 
 `sync_config.json` snippet:
 
@@ -121,10 +121,10 @@ This example shows a personal-only run (no bind mounts) using `photos_sync` with
 
 **Before running `python main.py --create-personal-albums`:**
 
-Personal Photos (`/volume1/homes/photos_sync/Photos`):
+Personal Photos (`/volume1/homes/<user>/Photos`):
 
 ```
-/volume1/homes/photos_sync/Photos
+/volume1/homes/<user>/Photos
 └─ Family/
 	└─ Trips/
 	   ├─ 2023/
@@ -337,7 +337,7 @@ Non-secret behavior now lives in `sync_config.json`, while `.env` only keeps sen
 
 Synology Photos follows the same ACLs as File Station/SMB. Set up the `photo` shared folder so every user only sees their Team Space roots:
 
-1. **Create a sync user** – Pick a DSM account (for example `photos_sync`) that owns the personal Photos space. Grant this account access to the `photo` shared folder; it becomes `SYNOLOGY_USERNAME` in `.env`.
+1. **Create a sync user** – Pick a DSM account (for example `<user>`) that owns the personal Photos space. Grant this account access to the `photo` shared folder; it becomes `SYNOLOGY_USERNAME` in `.env`.
 2. **Allow base access** – In **Control Panel → Shared Folder → photo → Edit**, keep the default “Enable access-based enumeration” on, but under **Permissions** make sure each user/group has at least `Read` access to `photo`. Without that, they cannot browse into their own root.
 3. **Turn off advanced knobs** – In **Edit → Advanced**, disable shared-folder quotas and advanced share permissions for `photo`. The automation assumes standard ACLs only.
 4. **Lock down each root** – For every Team Space root (e.g., `team_family`, `team_work`), open **File Station → photo → <root> → Properties → Permission**. Click **Advanced options → Disable inheritance**, then explicitly grant the intended user/group `Read/Write` (or `Read` if you prefer). With inheritance disabled, unlisted users already lose access, so you only need to add the accounts that should see that root. Repeat whenever you add a new root.
@@ -440,7 +440,7 @@ Example entries:
 "personal_album_roots": [
 	{
 		"label": "Family Archive",
-		"path": "/volume1/homes/photos_sync/Photos/family",
+		"path": "/volume1/homes/<user>/Photos/family",
 		"share_with": ["family_rw"],
 		"permission": "download"
 	},
@@ -471,16 +471,16 @@ When adapting `sync_config_example.json`:
 Config path resolution note:
 
 - `SYNC_CONFIG_PATH` (in your `.env`) may be an absolute path or a path relative to your current working directory. When a relative path is provided, the loader will first try to open it in the current working directory; if not found, it will also look for the same relative path under the repository root (the parent of the `synology_albums_sync` package). This helps when you run `python main.py` from another directory but want to keep `sync_config.json` in the project root.
-- To avoid ambiguity, provide an absolute path in `SYNC_CONFIG_PATH` (for example `/volume1/homes/photos_sync/sync_config.json`).
+- To avoid ambiguity, provide an absolute path in `SYNC_CONFIG_PATH` (for example `/volume1/homes/<user>/sync_config.json`).
 
 `.env` (secrets only):
 
 ```
 SYNOLOGY_IP=192.0.2.25
 SYNOLOGY_PORT=5000
-SYNOLOGY_USERNAME=photos_sync
+SYNOLOGY_USERNAME=<user>
 SYNOLOGY_PASSWORD=change_me
-SYNC_CONFIG_PATH=/volume1/homes/photos_sync/sync_config.json
+SYNC_CONFIG_PATH=/volume1/homes/<user>/sync_config.json
 ```
 
 `sync_config.json`:
@@ -564,9 +564,69 @@ Synology Albums Sync intentionally keeps the Synology API/Web helpers framework-
 
 1. Open **Control Panel → Task Scheduler** and click **Create → Triggered Task → User-defined script**.
 2. Name it `Synology Albums Sync mounts`, set **User** to `root`, and pick **Event → Boot-up**.
-3. In the **Task Settings** tab, paste the command `cd /volume1/homes/<user>/synology-albums-sync && /usr/local/bin/python3 main.py --mount` (adjust paths/interpreter as needed).
+3. In the **Task Settings** tab, paste the command `/volume1/homes/<user>/synology-albums-sync/scripts/run_mounts_on_boot.sh` (adjust paths as needed). Ensure the script is executable.
 4. (Optional) Enable **Send run details by email** or log to a file for troubleshooting.
 5. Create a second task scheduled for a delayed time (e.g., “Daily” + 5 minutes after boot) that runs `python main.py` or `python main.py --create-albums` so album + sharing updates happen after indexing catches up.
+
+Script wrapper & logging
+
+A minimal boot-only wrapper is provided to re-create bind mounts on system boot. Make it executable and schedule it as the DSM Boot-up task (example below).
+
+DSM Boot task (simple)
+
+1. Open Control Panel → Task Scheduler.
+2. Click **Create → Triggered Task → User-defined script**.
+3. Set **Name** to `Synology Albums Sync mounts`.
+4. Set **User** to `root`.
+5. Set **Event** / **Trigger** to **Boot-up**.
+6. In **Task Settings → Run command**, enter:
+
+```sh
+/volume1/homes/<user>/synology-albums-sync/scripts/run_mounts_on_boot.sh
+```
+
+Schedule a delayed post-boot run (after indexing) as a separate task that runs `python main.py`.
+
+Shell examples (generic)
+
+Run the boot script directly (replace with your repo path):
+
+```sh
+// Minimal boot-only script (example)
+#!/bin/sh
+# This example shows a minimal boot wrapper you can copy to your host and schedule as a Boot-up task.
+# Adjust `REPO_DIR` and `PYTHON` as needed for your environment.
+
+REPO_DIR="/volume1/homes/<user>/synology-albums-sync"
+cd "$REPO_DIR" || exit 1
+
+# Load environment from .env if present
+if [ -f .env ]; then
+	set -a
+	. .env
+	set +a
+fi
+
+# Interpreter and log directory (override via .env or Task Scheduler env)
+PYTHON="${PYTHON:-/usr/local/bin/python3}"
+LOGDIR="${LOGDIR:-/var/log/synology-albums-sync}"
+mkdir -p "$LOGDIR"
+
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+"$PYTHON" main.py --mount >> "$LOGDIR/boot-sync-${TIMESTAMP}.log" 2>&1
+```
+
+If you prefer invoking the script with an explicit interpreter (no execute bit required):
+
+```sh
+/bin/sh /path/to/synology-albums-sync/scripts/run_mounts_on_boot.sh
+```
+
+Boot script notes:
+- The boot script is intentionally minimal and accepts no arguments — it always runs `main.py --mount` to re-create bind mounts on boot.
+- The script loads `.env` from the repository root if present so `SYNC_CONFIG_PATH` and DSM credentials are applied automatically.
+- To override the Python interpreter, set the `PYTHON` environment variable in the Task Scheduler's environment settings or inside your `.env` file (for example `PYTHON=/usr/local/bin/python3`).
+- Logs are written to `/var/log/synology-albums-sync/boot-sync-<YYYYMMDD-HHMMSS>.log` by default; set `LOGDIR` in `.env` if you prefer a different location.
 
 ## Support
 
@@ -577,7 +637,7 @@ If this project helps you, consider sponsoring: https://github.com/sponsors/Aicu
 ## Troubleshooting
 
 - If new folders take a long time to appear, bump `REINDEX_SETTLE_SECONDS` or the `FILTER_WAIT_*` values.
-- Supply `PERSONAL_REINDEX_COMMAND` (for example `synophoto_dsm_userindex --user photos_sync --rebuild`) if Synology’s API intermittently fails.
+- Supply `PERSONAL_REINDEX_COMMAND` (for example `synophoto_dsm_userindex --user <user> --rebuild`) if Synology’s API intermittently fails.
 
 ## Known limitations & lessons learned
 
