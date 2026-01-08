@@ -34,7 +34,32 @@ class ConfigFileError(ConfigError):
 
 load_dotenv()
 
-CONFIG_PATH = os.getenv("SYNC_CONFIG_PATH", "sync_config.json")
+CONFIG_ENV = os.getenv("SYNC_CONFIG_PATH", "sync_config.json")
+CONFIG_PATH = CONFIG_ENV
+
+
+def _resolve_config_path(path: str) -> str:
+    """Resolve a config path: try as given, then relative to repo root when missing.
+
+    If `path` is absolute, return it. For relative paths, prefer the cwd location
+    if present, otherwise look for the file under the repository root (parent of
+    the package directory). Returns the absolute candidate path (even if it does
+    not exist) so callers can attempt to open it and handle missing files.
+    """
+    if os.path.isabs(path):
+        return path
+    # Candidate relative to current working directory
+    cwd_candidate = os.path.abspath(path)
+    if os.path.exists(cwd_candidate):
+        return cwd_candidate
+    # Candidate relative to repository root (package parent)
+    pkg_dir = os.path.dirname(__file__)
+    repo_root = os.path.abspath(os.path.join(pkg_dir, os.pardir))
+    repo_candidate = os.path.join(repo_root, path)
+    if os.path.exists(repo_candidate):
+        return repo_candidate
+    # Fallback to cwd candidate (may not exist) so caller sees the attempted path
+    return cwd_candidate
 
 RESERVED_NAMES: Set[str] = {
     "@eadir",
@@ -446,14 +471,21 @@ class RuntimeState:
 
 
 def _load_json_config(path: str = CONFIG_PATH) -> Dict[str, object]:
+    resolved = _resolve_config_path(path)
     try:
-        with open(path, "r", encoding="utf-8") as handle:
+        with open(resolved, "r", encoding="utf-8") as handle:
             return json.load(handle)
-    except FileNotFoundError as exc:
-        print(f"⚠️  Config file not found at '{path}'; continuing with defaults")
+    except FileNotFoundError:
+        # Provide helpful diagnostics: show where we looked
+        tried = [os.path.abspath(path), resolved]
+        tried_unique = []
+        for p in tried:
+            if p not in tried_unique:
+                tried_unique.append(p)
+        print(f"⚠️  Config file not found (tried): {', '.join(tried_unique)}; continuing with defaults")
         return {}
     except json.JSONDecodeError as exc:
-        raise ConfigFileError(f"Invalid JSON in config file '{path}': {exc}") from exc
+        raise ConfigFileError(f"Invalid JSON in config file '{resolved}': {exc}") from exc
 
 
 def load_app_config(path: str | None = None) -> AppConfig:

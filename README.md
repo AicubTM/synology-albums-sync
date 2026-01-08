@@ -468,6 +468,11 @@ When adapting `sync_config_example.json`:
 - Update `personal_album_roots` with your personal folders, adjusting `path`/`relative_path`, `label`, and `share_with` targets (e.g., `family_rw`, `kids_group`).
 - Leave `scan_max_depth`, `indexing`, and `enable_public_sharing` as-is unless you need different limits or sharing behavior.
 
+Config path resolution note:
+
+- `SYNC_CONFIG_PATH` (in your `.env`) may be an absolute path or a path relative to your current working directory. When a relative path is provided, the loader will first try to open it in the current working directory; if not found, it will also look for the same relative path under the repository root (the parent of the `synology_albums_sync` package). This helps when you run `python main.py` from another directory but want to keep `sync_config.json` in the project root.
+- To avoid ambiguity, provide an absolute path in `SYNC_CONFIG_PATH` (for example `/volume1/homes/photos_sync/sync_config.json`).
+
 `.env` (secrets only):
 
 ```
