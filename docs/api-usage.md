@@ -93,3 +93,120 @@ sharing.apply_private_sharing(
 - Keep `SynologyWebSharing` around if you rely on manual invite flows—the helper caches user/group IDs so repeated calls stay fast.
 
 With these pieces, Synology Albums Sync doubles as a reusable library: import the modules you need, wire them into your scheduler or service container, and keep leveraging the same DSM-specific logic without rewriting it.
+
+## Session-based API (for DSM Web UI)
+
+When building applications that run inside DSM's web interface (SPK packages, CGI scripts, iframes), you can use `SynologySessionAPI` instead of username/password authentication. This approach uses the user's existing DSM login session.
+
+### When to use Session-based API
+
+| Scenario | Recommended API |
+|----------|-----------------|
+| Background service / CLI tool | `SynologyPhotosAPI` (username/password) |
+| DSM web UI / SPK package | `SynologySessionAPI` (session credentials) |
+| CGI script in DSM context | `SynologySessionAPI` |
+| Mobile app connecting to NAS | `SynologyPhotosAPI` |
+
+### Quick-start example
+
+```python
+from synology_albums_sync import SynologySessionAPI, create_session_api
+
+# Create client with DSM session credentials
+api = create_session_api(
+    session_id="Tm3C43BGm1e9Grs4pLZS...",  # From 'id' cookie
+    syno_token="xxx...",             # From X-SYNO-TOKEN header
+    host="127.0.0.1",                       # localhost for CGI/SPK
+    port=5000                               # DSM HTTP port
+)
+
+# Check Team Space availability
+if api.is_team_space_enabled():
+    print("Team Space is enabled!")
+    
+    # Get photo root path
+    root = api.get_team_space_root_path()
+    print(f"Team Space path: {root}")
+    
+    # List folders (respects current user's permissions)
+    folders = api.get_all_team_folders()
+    for f in folders:
+        print(f"  - {f['name']}")
+```
+
+### Getting session credentials in JavaScript (DSM iframe)
+
+```javascript
+// Inside an iframe embedded in DSM:
+function getDsmCredentials() {
+    try {
+        const sid = window.parent.SYNO.SDS.Session.SID;
+        const token = window.parent.SYNO.SDS.Session.SynoToken;
+        return { sessionId: sid, synoToken: token };
+    } catch (e) {
+        console.error('Not running in DSM context');
+        return null;
+    }
+}
+```
+
+### CGI script example (shell + curl)
+
+```bash
+#!/bin/sh
+# Extract session from cookie
+SESSION_ID=$(echo "$HTTP_COOKIE" | grep -oP 'id=\K[^;]+')
+SYNO_TOKEN="$1"  # Passed from query string
+
+# Call Photos API with session auth
+curl -s --max-time 10 \
+    -X POST \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -H "X-SYNO-TOKEN: $SYNO_TOKEN" \
+    -b "id=$SESSION_ID" \
+    -d "api=SYNO.FotoTeam.Browse.Folder&version=1&method=list&id=0&limit=100" \
+    "http://127.0.0.1:5000/webapi/entry.cgi"
+```
+
+### Available methods
+
+| Method | Description |
+|--------|-------------|
+| `list_team_folders(folder_id, offset, limit)` | List Team Space folders |
+| `get_team_folder(folder_id)` | Get folder details |
+| `list_personal_folders(folder_id, offset, limit)` | List Personal Space folders |
+| `list_folder_filters()` | Get folder filter entries |
+| `list_albums(offset, limit)` | List albums |
+| `create_album(name)` | Create album |
+| `share_album(album_id, users, permission)` | Share album |
+| `list_shareable_users()` | Get users/groups for sharing |
+| `get_index_status()` | Check indexing status |
+| `trigger_reindex()` | Trigger photo reindex |
+| `get_shared_folder(name)` | Get shared folder info |
+| `list_shared_folders()` | List all shared folders |
+| `get_package_status(package_name)` | Get package status |
+| `get_current_user()` | Get current user info |
+| `is_team_space_enabled()` | Check if Team Space active |
+| `get_team_space_root_path()` | Auto-detect photo root |
+| `get_all_team_folders()` | Get all Team Space folders |
+
+### Key differences from SynologyPhotosAPI
+
+```
+SynologyPhotosAPI (credential-based):
+  ┌─────────────────────────────────────────────────┐
+  │  Your App  →  synology-api library  →  DSM API  │
+  │                    ↑                            │
+  │           username + password                   │
+  └─────────────────────────────────────────────────┘
+  
+SynologySessionAPI (session-based):
+  ┌─────────────────────────────────────────────────┐
+  │  Your App  →  direct HTTP calls  →  DSM API    │
+  │                    ↑                            │
+  │           session cookie + CSRF token           │
+  │           (from logged-in user)                 │
+  └─────────────────────────────────────────────────┘
+```
+
+The session-based approach inherits the current user's permissions, so a non-admin user will only see the Team Space folders they have access to.

@@ -172,6 +172,7 @@ synology-albums-sync/
 	├─ albums.py            # AlbumService (CRUD/sharing/orphan pruning)
 	├─ mounts.py / media.py # Low-level mount + media utilities
 	├─ paths.py             # Filesystem normalization helpers
+	├─ synology_session.py  # SynologySessionAPI (session-based API access)
 	├─ synology_api.py      # SynologyPhotosAPI + folder/index helpers
 	└─ synology_web.py      # SynologyWebSharing (manual invite fallback)
 ```
@@ -549,6 +550,57 @@ Synology Albums Sync intentionally keeps the Synology API/Web helpers framework-
 - Instantiating `SynologyPhotosAPI`/`SynologyWebSharing` with your own config + runtime state
 - Ensuring sessions, waiting for folder filters, and sharing albums without the CLI
 - Tips for mixing these helpers with other schedulers or orchestration layers
+
+### Session-based API (for DSM Web UI integration)
+
+The `SynologySessionAPI` class allows API access using an existing DSM login session instead of username/password credentials. This is ideal for:
+
+- **SPK packages** embedded in DSM's web interface
+- **Web UI components** running in an iframe within DSM
+- **Any scenario** where the user is already logged into DSM
+
+```python
+from synology_albums_sync import SynologySessionAPI, create_session_api
+
+# Create client with DSM session credentials
+api = create_session_api(
+    session_id="Tm3C43BGm1e9Grs4pLZS...",  # From 'id' cookie
+    syno_token="xxx..."              # From X-SYNO-TOKEN header
+)
+
+# List Team Space folders (respects user permissions)
+folders = api.get_all_team_folders()
+for folder in folders:
+    print(f"  - {folder['name']} (id: {folder['id']})")
+
+# Check if Team Space is enabled
+if api.is_team_space_enabled():
+    print("Team Space is active")
+
+# Auto-detect photo root path
+photo_root = api.get_team_space_root_path()  # e.g., "/volume1/photo"
+
+# Get current user info
+user_info = api.get_current_user()
+```
+
+**Key differences from SynologyPhotosAPI:**
+
+| Feature | SynologyPhotosAPI | SynologySessionAPI |
+|---------|-------------------|-------------------|
+| Authentication | Username + Password | Session cookie + CSRF token |
+| Credentials storage | Requires `.env` file | No storage needed |
+| User context | Fixed service account | Current logged-in user |
+| Permission scope | Full access (service account) | User's own permissions |
+| Use case | Background service/CLI | DSM web UI integration |
+
+**How to get session credentials in JavaScript:**
+
+```javascript
+// Inside DSM iframe:
+const sessionId = window.parent.SYNO.SDS.Session.SID;
+const synoToken = window.parent.SYNO.SDS.Session.SynoToken;
+```
 
 ## Refactor roadmap
 

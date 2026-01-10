@@ -15,6 +15,7 @@ from .config import (
 )
 from .synology_api import SynologyPhotosAPI
 from .synology_web import SynologyWebSharing
+from .synology_session import SynologySessionAPI, create_session_api
 
 __all__ = [
 	"__version__",
@@ -29,4 +30,6 @@ __all__ = [
 	"load_app_config",
 	"SynologyPhotosAPI",
 	"SynologyWebSharing",
+	"SynologySessionAPI",
+	"create_session_api",
 ]
